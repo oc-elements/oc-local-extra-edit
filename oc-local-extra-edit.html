@@ -1,0 +1,68 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<link rel="import" href="../oc-extra-edit/oc-extra-edit.html">
+<link rel="import" href="../oc-local-product-extras-api/oc-local-product-extras-api.html">
+
+<!--
+`oc-local-extra-edit`
+Element for editing a local extra
+
+@demo demo/index.html 
+-->
+
+<dom-module id="oc-local-extra-edit">
+  <style>
+    :host {
+      display: block;
+    }
+  </style>
+  <template>
+    <oc-local-product-extras-api id="extrasApi"></oc-local-product-extras-api>
+    <oc-extra-edit
+            id="extraEditor"
+            on-save="_onSave"
+    ></oc-extra-edit>
+  </template>
+
+  <script>
+    Polymer({
+
+      is: 'oc-local-extra-edit',
+
+      properties: {
+        organisationId: Number,
+        extraId: Number,
+        loading: {
+          type: Boolean,
+          notify: true
+        }
+      },
+
+      observers: [
+        'refresh(organisationId, extraId)'
+      ],
+
+      refresh: function() {
+        if (this.organisationId && this.extraId) {
+          this.loading = true;
+          this.$.extrasApi.getExtra(this.extraId)
+                  .then(function(request) {
+                    this.$.extraEditor.setExtra(request.response);
+                  }.bind(this))
+                  .catch(this.fire.bind(this, 'extra-error', 'Could not load extra'));
+        }
+      },
+
+      _onSave: function(event) {
+        this.loading = true;
+        this.$.extrasApi.updateExtra(event.detail.id, {
+          name: event.detail.name,
+          description: event.detail.description,
+          price: event.detail.price,
+          setId: event.detail.setId})
+                .catch(this.fire.bind(this, 'extra-error', 'Could not save extra'))
+                .finally(this.set.bind(this, 'loading', false));
+      }
+    });
+  </script>
+</dom-module>
